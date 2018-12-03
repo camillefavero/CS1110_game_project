@@ -8,14 +8,13 @@
 
 import pygame
 import gamebox
-import time
 import random
 import t_pieces
 camera = gamebox.Camera(300, 600)
 ticker = 0
 
 # Game conditions
-countdown = 301
+countdown = 180
 score = 0
 game_on = False
 trimode = False
@@ -36,7 +35,7 @@ def tick(keys):
     if not game_on:
         countdown -= 1
         if countdown == 0:
-            game_on
+            game_on = True
 
     if trimode:
             current_piece = t_pieces.tritrominoes[piece_selector]
@@ -57,10 +56,12 @@ def tick(keys):
             t_pieces.piece_x -= 10
         t_pieces.piece_y -= t_pieces.piece_speed
 
+    # Drawing
+    camera.clear("black")
     camera.draw(floor)
     camera.draw(current_piece)
+    timer = gamebox.from_text(150, 300, "Start in: " + str(int(countdown/30)), 40, "red")
     if not game_on:
-        timer = gamebox.from_text(150, 300, "Start in: " + str(int(countdown/30)), 40, "red")
         camera.draw(timer)
     camera.display()
 
