@@ -1,105 +1,66 @@
 # Olivia Goodrich (otg5nt) and Camille Favero (caf3wu)
 
-# Game idea: Triangular Tetris (aka Tritris)
-# We'll be making a Tetris-like game played on a using six tritrominoes made from a base
-# triangle shape, rather than square.
+# Game idea: Xtreme Tetris
+# Iterates through multiple levels of modifications as the player progresses,
+# including enemy fire, base triangle pieces, and the Illuminati.
 
 # Optional features: enemy, timer, health meter, multiple levels
 
 import pygame
 import gamebox
+import time
 import random
+import t_pieces
 camera = gamebox.Camera(300, 600)
-game_on = False
 ticker = 0
 
-# Piece conditions
-s = 20
-h = (s/2)*(3**0.5)
-piece_x = 150
-piece_y = 50
-piece_speed = 10
+# Game conditions
+countdown = 301
+score = 0
+game_on = False
+trimode = False
+piece_selector = random.randint(0, 5)
 
-# Makes the tritrominoes:
-tet1 = gamebox.from_polygon(piece_x, piece_y, "red",
-                            (0, 0),
-                            (0, -s),
-                            (h, -s/2),
-                            (h, s/2),
-                            (0, s),
-                            (-h, s/2),
-                            (-h, -s/2)
-                            )
-
-tet2 = gamebox.from_polygon(piece_x, piece_y, "yellow",
-                            (0, 0),
-                            (0, -s),
-                            (h, -s/2),
-                            (h, s/2),
-                            (-h, s*1.5),
-                            (-h, s/2)
-                            )
-
-tet3 = gamebox.from_polygon(piece_x, piece_y, "green",
-                            (0, 0),
-                            (0, -s),
-                            (h, -s/2),
-                            (h, s*1.5),
-                            (-h, s/2)
-                            )
-
-tet4 = gamebox.from_polygon(piece_x, piece_y, "blue",
-                            (0, 0),
-                            (0, -s),
-                            (h*2, 0),
-                            (0, s),
-                            (-h, s/2)
-                            )
-
-tet5 = gamebox.from_polygon(piece_x, piece_y, "purple",
-                            (0, 0),
-                            (0, -s),
-                            (h, -s*1.5),
-                            (h, s/2),
-                            (0, s),
-                            (-h, s/2)
-                            )
-
-tet6 = gamebox.from_polygon(piece_x - 40, piece_y, "orange",
-                            (0, -s),
-                            (-h, -s/2),
-                            (-h, s*1.5),
-                            (0, s*2)
-                            )
-
-tritrominoes = [tet1, tet2, tet3, tet4, tet5, tet6]
-
-
+# Other game elements
+floor = gamebox.from_color(150, 605, "grey", 300, 10)
 
 def tick(keys):
 
+    global countdown
     global game_on
-    global piece_speed
-    global tritrominoes
-    global piece_x
-    global piece_y
+    global score
+    global trimode
+    global floor
 
-    current_piece = tritrominoes[random.randint(0, 5)]
-    # current_piece = tritrominoes[5]
+    # Timer
+    if not game_on:
+        countdown -= 1
+        if countdown == 0:
+            game_on
 
-    for i in range(10):
-        countdown = int(i)
-        timer = gamebox.from_text(150, 300, "Start in: " + str(countdown))
+    if trimode:
+            current_piece = t_pieces.tritrominoes[piece_selector]
+    else:
+        current_piece = t_pieces.tetrominoes[piece_selector]
+
+    if current_piece.touches(floor):
+        current_piece.move_to_stop_overlapping()
+        if current_piece in t_pieces.tetrominoes:
+            current_piece = t_pieces.tetrominoes[random.randint(0, 6)]
+        else:
+            current_piece = t_pieces.tritrominoes[random.randint(0, 5)]
 
     if game_on:
         if pygame.K_RIGHT in keys:
-            piece_x += 10
+            t_pieces.piece_x += 10
         if pygame.K_LEFT in keys:
-            piece_x -= 10
-        piece_y -= piece_speed
+            t_pieces.piece_x -= 10
+        t_pieces.piece_y -= t_pieces.piece_speed
 
+    camera.draw(floor)
     camera.draw(current_piece)
-    if ticker <= 300:
+    if not game_on:
+        timer = gamebox.from_text(150, 300, "Start in: " + str(int(countdown/30)), 40, "red")
         camera.draw(timer)
     camera.display()
 
