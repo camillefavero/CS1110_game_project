@@ -17,9 +17,11 @@ ticker = 0
 time_s = 0
 score = 0
 game_on = False
-trimode = False
-current_piece = t_pieces.tetrominoes[random.randint(0, 6)]  # keeps current_piece from reassigning every frame
-
+trimode = True
+if trimode:
+    current_piece = t_pieces.tritrominoes[random.randint(0, 5)]  # keeps current_piece from reassigning every frame
+else:
+    current_piece = t_pieces.tetrominoes[random.randint(0, 6)]
 
 # Other game elements
 floor = gamebox.from_color(150, 650, "grey", 300, 100)
@@ -59,16 +61,25 @@ def tick(keys):
             current_piece.x += 20
         if pygame.K_LEFT in keys:
             current_piece.x -= 20
-        if pygame.K_UP in keys:
-            current_piece.rotate(90)
-            keys.clear()
-        if pygame.K_SPACE in keys:
-            current_piece.rotate(-90)
-            keys.clear()
         if pygame.K_DOWN in keys:
             current_piece.y += 20
         if time_s % 20 == 0 and not (pygame.K_DOWN in keys):
             current_piece.y += 2*t_pieces.s
+        # ROTATIONS
+        if not trimode:
+            if pygame.K_UP in keys:
+                current_piece.rotate(90)
+                keys.clear()
+            if pygame.K_SPACE in keys:
+                current_piece.rotate(-90)
+                keys.clear()
+        else:
+            if pygame.K_UP in keys:
+                current_piece.rotate(60)
+                keys.clear()
+            if pygame.K_SPACE in keys:
+                current_piece.rotate(-60)
+                keys.clear()
 
     # Drawing
     camera.clear("black")
