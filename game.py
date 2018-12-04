@@ -14,58 +14,76 @@ camera = gamebox.Camera(300, 600)
 ticker = 0
 
 # Game conditions
-countdown = 180
+time_s = 0
 score = 0
 game_on = False
 trimode = False
-piece_selector = random.randint(0, 5)
+current_piece = t_pieces.tetrominoes[random.randint(0, 6)]  # keeps current_piece from reassigning every frame
+
 
 # Other game elements
-floor = gamebox.from_color(150, 605, "grey", 300, 10)
+floor = gamebox.from_color(150, 650, "grey", 300, 100)
+bounds = [gamebox.from_color(0, 300, "grey", 0, 600), gamebox.from_color(300, 300, "grey", 0, 600)]
 
 def tick(keys):
 
-    global countdown
+    global time_s
     global game_on
     global score
     global trimode
     global floor
+    global current_piece
 
     # Timer
-    if not game_on:
-        countdown -= 1
-        if countdown == 0:
-            game_on = True
+    time_s += 1
+    #print(time_s)
+    if time_s >= 100:
+        game_on = True
 
-    if trimode:
-            current_piece = t_pieces.tritrominoes[piece_selector]
-    else:
-        current_piece = t_pieces.tetrominoes[piece_selector]
-
+    past_pieces = []
+    current_piece.move_to_stop_overlapping(floor)
+    for bound in bounds:
+        current_piece.xspeed = 0
+        current_piece.move_to_stop_overlapping(bound, 1, 1)
     if current_piece.touches(floor):
-        current_piece.move_to_stop_overlapping()
-        if current_piece in t_pieces.tetrominoes:
+        current_piece.yspeed = 0
+        past_pieces.append(current_piece)
+        if not trimode:
             current_piece = t_pieces.tetrominoes[random.randint(0, 6)]
         else:
             current_piece = t_pieces.tritrominoes[random.randint(0, 5)]
 
+    # Key Controls
     if game_on:
         if pygame.K_RIGHT in keys:
-            t_pieces.piece_x += 10
+            current_piece.x += 20
         if pygame.K_LEFT in keys:
-            t_pieces.piece_x -= 10
-        t_pieces.piece_y -= t_pieces.piece_speed
+            current_piece.x -= 20
+        if pygame.K_UP in keys:
+            current_piece.rotate(90)
+            keys.clear()
+        if pygame.K_SPACE in keys:
+            current_piece.rotate(-90)
+            keys.clear()
+        if pygame.K_DOWN in keys:
+            current_piece.y += 20
+        if time_s % 20 == 0 and not (pygame.K_DOWN in keys):
+            current_piece.y += 2*t_pieces.s
 
     # Drawing
     camera.clear("black")
     camera.draw(floor)
+    for bound in bounds:
+        camera.draw(bound)
     camera.draw(current_piece)
-    timer = gamebox.from_text(150, 300, "Start in: " + str(int(countdown/30)), 40, "red")
+    for piece in past_pieces:
+        camera.draw(piece)
+    timer = gamebox.from_text(150, 300, "Start in: " + str(5-int(time_s/20)), 40, "red")
     if not game_on:
         camera.draw(timer)
     camera.display()
 
 
-ticks_per_second = 30
+ticks_per_second = 20
 
 gamebox.timer_loop(ticks_per_second, tick)
