@@ -21,29 +21,29 @@ score = 0
 health = 3
 past_pieces = []
 game_on = False
-trimode = False
+trimode = True
 enemy_mode = False
 if trimode:
     current_piece = t_pieces.tritrominoes[random.randint(0, 5)]  # keeps current_piece from reassigning every frame
 else:
     current_piece = t_pieces.tetrominoes[random.randint(0, 6)]
 
-def tribounds_generator(s, h, xaxis, yaxis):
-    spikes = int(yaxis/h)
-    points_right = []
-    points_left = []
-    for i in range(0, spikes, -1):
-        if i%2 == 0:
-            newpoint1_l = (s/2, (i*h)+(yaxis % h))
-            newpoint1_r = (xaxis-s/2, (i*h)+(yaxis % h))
-            points_left.append(newpoint1_l)
-            points_right.append(newpoint1_r)
-        else:
-            newpoint2_l = (0, (i*h)+(yaxis % h))
-            newpoint2_r = (xaxis, (i*h)+(yaxis % h))
-            points_left.append(newpoint2_l)
-            points_right.append(newpoint2_r)
-    return [points_left, points_right]
+def triwalls_generator(s, h, xaxis, yaxis):
+    spikes = []
+    shapes = []
+    for i in range(yaxis):
+        spike = yaxis-2*h*i
+        spikes.append(spike)
+    for spike in spikes:
+        shape_l = \
+            gamebox.from_polygon(0, spike, "grey",
+                            (0, 0), (-t_pieces.s, 0), (-t_pieces.s, -2*t_pieces.h), (0, -2*t_pieces.h), (t_pieces.s/2, -t_pieces.h))
+        shape_r = \
+            gamebox.from_polygon(xaxis, spike, "grey",
+                            (0, 0), (t_pieces.s, 0), (t_pieces.s, -2*t_pieces.h), (0, -2*t_pieces.h), (-t_pieces.s/2, -t_pieces.h))
+        shapes.append(shape_l)
+        shapes.append(shape_r)
+    return shapes
 
 
 # Other game elements
@@ -52,12 +52,9 @@ enemy = gamebox.from_image(160, 300, 'bard.png')
 enemy.width = 150
 
 if trimode:
-    bounds =[
-        gamebox.from_polygon(0, 0, "grey", (-50, 0), (50, 640), tribounds_generator(t_pieces.s, t_pieces.h, 320, 640)[0]),
-        gamebox.from_polygon(0, 0, "grey", (370, 0), (370, 640), tribounds_generator(t_pieces.s, t_pieces.h, 320, 640)[1])
-    ]
+    walls = triwalls_generator(t_pieces.s, t_pieces.h, 320, 640)
 else:
-    bounds = [gamebox.from_color(-50, 320, "grey", 100, 640), gamebox.from_color(370, 320, "grey", 100, 640)]
+    walls = [gamebox.from_color(-50, 320, "grey", 100, 640), gamebox.from_color(370, 320, "grey", 100, 640)]
 
 
 def tick(keys):
@@ -78,18 +75,28 @@ def tick(keys):
     if time_s >= 100:
         game_on = True
 
-    # Piece switch (the glitch is here)
-    current_piece.move_to_stop_overlapping(floor)
-    for bound in bounds:
-        current_piece.xspeed = 0
-        current_piece.move_to_stop_overlapping(bound, 1, 1)
+    # Piece switch
+    def dead(p):
+        p.yspeed = 0
+        past_pieces.append(p)
+    for wall in walls:
+        if current_piece.touches(wall):
+            current_piece.move_to_stop_overlapping(wall)
+            current_piece.xspeed = 0
     if current_piece.touches(floor):
-        current_piece.yspeed = 0
-        past_pieces.append(current_piece)
+        current_piece.move_to_stop_overlapping(floor)
+        dead(current_piece)
         if not trimode:
             current_piece = t_pieces.tetrominoes[random.randint(0, 6)]
         else:
             current_piece = t_pieces.tritrominoes[random.randint(0, 5)]
+    for piece in past_pieces:
+        if current_piece.touches(piece):
+            dead(current_piece)
+            if not trimode:
+                current_piece = t_pieces.tetrominoes[random.randint(0, 6)]
+            else:
+                current_piece = t_pieces.tritrominoes[random.randint(0, 5)]
 
     # Key Controls
     if game_on:
@@ -146,15 +153,15 @@ def tick(keys):
     # Drawing
     camera.clear("black")
     camera.draw(floor)
-    for bound in bounds:
-        camera.draw(bound)
+    for wall in walls:
+        camera.draw(wall)
     for piece in past_pieces:
         camera.draw(piece)
     camera.draw(current_piece)
     if game_on and enemy_mode:
         camera.draw(enemy)
-        for component in health_bar:
-            camera.draw(component)
+        # for component in health_bar:
+        #     camera.draw(component)
     timer = gamebox.from_text(camera.x, camera.y, "Start in: " + str(5-int(time_s/20)), 40, "red")
     if not game_on:
         camera.draw(timer)
