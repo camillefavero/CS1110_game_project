@@ -1,5 +1,7 @@
 # Olivia Goodrich (otg5nt) and Camille Favero (caf3wu)
 
+# health code ~ line 136
+
 # Game idea: Xtreme Tetris
 # Iterates through multiple levels of modifications as the player progresses,
 # including enemy fire, base triangle pieces, and the Flappy gauntlet.
@@ -16,8 +18,10 @@ ticker = 0
 # Game conditions
 time_s = 0
 score = 0
+health = 3
+past_pieces = []
 game_on = False
-trimode = True
+trimode = False
 enemy_mode = False
 if trimode:
     current_piece = t_pieces.tritrominoes[random.randint(0, 5)]  # keeps current_piece from reassigning every frame
@@ -49,11 +53,8 @@ enemy.width = 150
 
 if trimode:
     bounds =[
-        gamebox.from_polygon(0, 0, "grey", (-50, 0), (50, 640),
-                             for i in len(tribounds_generator(t_pieces.s, t_pieces.h, 320, 640)[0]):
-                                tribounds_generator(t_pieces.s, t_pieces.h, 320, 640)[0][i]),
-        gamebox.from_polygon(0, 0, "grey", (370, 0), (370, 640),
-                             tuple in tribounds_generator(t_pieces.s, t_pieces.h, 320, 640)[1])
+        gamebox.from_polygon(0, 0, "grey", (-50, 0), (50, 640), tribounds_generator(t_pieces.s, t_pieces.h, 320, 640)[0]),
+        gamebox.from_polygon(0, 0, "grey", (370, 0), (370, 640), tribounds_generator(t_pieces.s, t_pieces.h, 320, 640)[1])
     ]
 else:
     bounds = [gamebox.from_color(-50, 320, "grey", 100, 640), gamebox.from_color(370, 320, "grey", 100, 640)]
@@ -65,9 +66,11 @@ def tick(keys):
     global game_on
     global score
     global trimode
-    global bullet_mode
+    global enemy_mode
     global floor
     global current_piece
+    global past_pieces
+    global health
 
     # Timer
     time_s += 1
@@ -76,7 +79,6 @@ def tick(keys):
         game_on = True
 
     # Piece switch (the glitch is here)
-    past_pieces = []
     current_piece.move_to_stop_overlapping(floor)
     for bound in bounds:
         current_piece.xspeed = 0
@@ -118,9 +120,9 @@ def tick(keys):
                 keys.clear()
 
     if enemy_mode:
-        if not (-10 < enemy.x < 330):
+        if 0 <= enemy.x or enemy.x<= 320:
             enemy.xspeed = -enemy.xspeed
-        if not (0 < enemy.y < 600):
+        if 0 <= enemy.y or enemy.y <= 600:
             enemy.yspeed = -enemy.yspeed
         direc_time = random.randint(100, 600)
         interval = time_s % (4*direc_time)
@@ -133,6 +135,13 @@ def tick(keys):
         elif interval <= 4*direc_time:
             enemy.y -= 10
 
+        # if current_piece.touches(enemy):
+        #     health -= 1
+        # health_bar = [
+        #     gamebox.from_color(280, 30, , )
+        # ]
+
+
 
     # Drawing
     camera.clear("black")
@@ -144,6 +153,8 @@ def tick(keys):
     camera.draw(current_piece)
     if game_on and enemy_mode:
         camera.draw(enemy)
+        for component in health_bar:
+            camera.draw(component)
     timer = gamebox.from_text(camera.x, camera.y, "Start in: " + str(5-int(time_s/20)), 40, "red")
     if not game_on:
         camera.draw(timer)
